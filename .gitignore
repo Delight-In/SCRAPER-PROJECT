@@ -1,5 +1,4 @@
-myntra_review_project-main/
-
+*.csv
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

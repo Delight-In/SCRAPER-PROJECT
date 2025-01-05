@@ -1,31 +1,35 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup as soup
+from selenium import webdriver 
+from selenium.webdriver.common.by import By 
+from src.exception import CustomException
+from bs4 import BeautifulSoup as bs
 import pandas as pd
-import sys
+import os, sys
 import time
 from selenium.webdriver.chrome.options import Options 
 from urllib.parse import quote
-from src.exception import CustomException
-
 
 class ScrapeReviews:
-    def __init__(self, Product_Name:str, No_of_Product:str):
-        
-        option = Options
-        self.webdriver.Chrome(option=option)
+    def __init__(self,
+                 product_name:str,
+                 no_of_products:int):
+        options = Options()
 
-        self.name = Product_Name
-        self.num = No_of_Product
+        # Start a new Chrome browser session
+        self.driver = webdriver.Chrome(options=options)
+
+        self.product_name = product_name
+        self.no_of_products = no_of_products
 
     def scrape_product_urls(self, product_name):
         try:
             search_string = product_name.replace(" ","-")
+            # no_of_products = int(self.request.form['prod_no'])
+
             encoded_query = quote(search_string)
             # Navigate to the URL
             self.driver.get(f"https://www.myntra.com/{search_string}?rawQuery={encoded_query}")
             myntra_text = self.driver.page_source
-            myntra_html = soup(myntra_text, "html.parser")
+            myntra_html = bs(myntra_text, "html.parser")
             pclass = myntra_html.findAll("ul", {"class": "results-base"})
 
             product_urls = []
@@ -46,12 +50,14 @@ class ScrapeReviews:
             productLink = "https://www.myntra.com/" + product_link
             self.driver.get(productLink)
             prodRes = self.driver.page_source
-            prodRes_html = soup(prodRes, "html.parser")
+            prodRes_html = bs(prodRes, "html.parser")
             title_h = prodRes_html.findAll("title")
 
             self.product_title = title_h[0].text
 
-            overallRating = prodRes_html.findAll("div", {"class": "index-overallRating"})
+            overallRating = prodRes_html.findAll(
+                "div", {"class": "index-overallRating"}
+            )
             for i in overallRating:
                 self.product_rating_value = i.find("div").text
             price = prodRes_html.findAll("span", {"class": "pdp-price"})
@@ -67,7 +73,7 @@ class ScrapeReviews:
         
     def scroll_to_load_reviews(self):
         # Change the window size to load more data
-        self.driver.set_window_size(1920, 1080)
+        self.driver.set_window_size(1920, 1080)  # Example window size, adjust as needed
 
         # Get the initial height of the page
         last_height = self.driver.execute_script("return document.body.scrollHeight")
@@ -88,7 +94,6 @@ class ScrapeReviews:
             # Update the last height for the next iteration
             last_height = new_height
 
-
     def extract_products(self, product_reviews: list):
         try:
             t2 = product_reviews["href"]
@@ -99,8 +104,10 @@ class ScrapeReviews:
             
             review_page = self.driver.page_source
 
-            review_html = soup(review_page, "html.parser")
-            review = review_html.findAll("div", {"class": "detailed-reviews-userReviewsContainer"})
+            review_html = bs(review_page, "html.parser")
+            review = review_html.findAll(
+                "div", {"class": "detailed-reviews-userReviewsContainer"}
+            )
 
             for i in review:
                 user_rating = i.findAll("div", {"class": "user-review-main user-review-showRating"})
@@ -154,13 +161,11 @@ class ScrapeReviews:
                     "Comment",
                 ],
             )
-
             return review_data
 
         except Exception as e:
             raise CustomException(e, sys)
         
-    
     def skip_products(self, search_string, no_of_products, skip_index):
         product_urls: list = self.scrape_product_urls(search_string, no_of_products + 1)
 
@@ -179,16 +184,14 @@ class ScrapeReviews:
                 if review:
                     product_detail = self.extract_products(review)
                     product_details.append(product_detail)
-
                     review_len += 1
                 else:
                     product_urls.pop(review_len)
 
             self.driver.quit()
-            data = pd.concat(product_details, axis=0)           
-            data.to_csv("Myntra_Scrapedata.csv", index=False)
-            
-            return data  
+            data = pd.concat(product_details, axis=0)
+            data.to_csv("data.csv", index=False)
+            return data
 
         except Exception as e:
             raise CustomException(e, sys)

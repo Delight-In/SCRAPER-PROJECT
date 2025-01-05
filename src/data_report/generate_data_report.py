@@ -3,9 +3,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-import os, sys
-from src.exception import CustomException
-
 class DashboardGenerator:
     def __init__(self, data):
         self.data = data
@@ -24,21 +21,15 @@ class DashboardGenerator:
         # Summary pie chart of average ratings by product
         product_ratings = self.data.groupby('Product Name', as_index=False)['Over_All_Rating'].mean().dropna()
 
-        fig_pie = px.pie(product_ratings, 
-                         values='Over_All_Rating', 
-                         names='Product Name',
+        fig_pie = px.pie(product_ratings, values='Over_All_Rating', names='Product Name',
                          title='Average Ratings by Product')
         st.plotly_chart(fig_pie)
 
         # Bar chart comparing average prices of different products with different colors
         avg_prices = self.data.groupby('Product Name', as_index=False)['Price'].mean().dropna()
-        fig_bar = px.bar(avg_prices, 
-                         x='Product Name', 
-                         y='Price', 
-                         color='Product Name',
+        fig_bar = px.bar(avg_prices, x='Product Name', y='Price', color='Product Name',
                          title='Average Price Comparison Between Products',
                          color_discrete_sequence=px.colors.qualitative.Bold)
-        
         fig_bar.update_xaxes(title='Product Name')
         fig_bar.update_yaxes(title='Average Price')
         st.plotly_chart(fig_bar)
