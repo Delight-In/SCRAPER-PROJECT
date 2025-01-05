@@ -5,4 +5,5 @@ This is a web scraper designed to extract product data from Myntra, a popular on
 Python = 3.10
 
 ### Project 
+<img src="images\screenshot-1736078555642.png">
 <img src="images\screenshot-1736078653993.png">
